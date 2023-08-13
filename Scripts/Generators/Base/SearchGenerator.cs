@@ -13,4 +13,13 @@ public class SearchGenerator : MonoBehaviour, IProceduralGenerator
         data.childrenData.Add(nextGenerator.Generate(depth - 1));
         return data;
     }
+
+    [ContextMenu(nameof(TestGenerate))]
+    private void TestGenerate()
+    {
+        const int DEPTH = 2;
+        var data = Generate(DEPTH - 1);
+        Debug.Log(data);
+    }
+
 }

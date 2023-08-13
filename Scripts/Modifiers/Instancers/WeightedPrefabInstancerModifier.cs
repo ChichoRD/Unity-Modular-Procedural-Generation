@@ -11,13 +11,13 @@ public class WeightedPrefabInstancerModifier : MonoBehaviour, IGenerationModifie
         public readonly float Weight => weight;
     }
 
+    [SerializeField] private PrefabInstancerModifier _prefabInstancerModifier;
     [SerializeField] private WeightedPrefab[] _weightedPrefabs;
 
     public GenerationData Modify(GenerationData generationData)
     {
-        WeightedPrefab selected = RandomExtensions.GetWeightedRandom(_weightedPrefabs);
-        var instance = Instantiate(selected.prefab, transform.position, transform.rotation);
-        generationData.foundGenerator = instance.GetComponentInChildren<IProceduralGenerator>();
+        WeightedPrefab selected = _weightedPrefabs.GetWeightedRandom();
+        _prefabInstancerModifier.InstantiateAndPosition(selected.prefab, ref generationData);
         return generationData;
     }
 }

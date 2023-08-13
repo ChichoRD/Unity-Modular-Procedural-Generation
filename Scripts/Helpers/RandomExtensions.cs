@@ -4,22 +4,24 @@ using UnityEngine;
 
 public static class RandomExtensions
 {
-    public static T GetWeightedRandom<T>(T[] objects, float[] weights)
+    public static T GetRandom<T>(this IEnumerable<T> objects) => objects.ElementAtOrDefault(Random.Range(0, objects.Count()));
+
+    public static T GetWeightedRandom<T>(IEnumerable<T> objects, IEnumerable<float> weights)
     {
         var totalWeight = weights.Sum();
 
         var randomWeight = Random.Range(0.0f, totalWeight);
         var acumulatedWeight = 0.0f;
-        for (var i = 0; i < objects.Length; i++)
+        for (var i = 0; i < objects.Count(); i++)
         {
-            acumulatedWeight += weights[i];
-            if (randomWeight < acumulatedWeight) return objects[i];
+            acumulatedWeight += weights.ElementAt(i);
+            if (randomWeight < acumulatedWeight) return objects.ElementAt(i);
         }
 
-        return objects[^1];
+        return objects.LastOrDefault();
     }
 
-    public static T GetWeightedRandom<T>(IEnumerable<T> objects) where T : IRandomWeightable
+    public static T GetWeightedRandom<T>(this IEnumerable<T> objects) where T : IRandomWeightable
     {
         var totalWeight = objects.Sum(obj => obj.Weight);
 
@@ -31,6 +33,6 @@ public static class RandomExtensions
             if (randomWeight < acumulatedWeight) return obj;
         }
 
-        return objects.Last();
+        return objects.LastOrDefault();
     }
 }
