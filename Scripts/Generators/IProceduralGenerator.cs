@@ -1,4 +1,4 @@
 public interface IProceduralGenerator
 {
-    GenerationData Generate(int depth);
+    IGenerationData Generate(int depth);
 }

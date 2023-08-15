@@ -1,4 +1,4 @@
 public interface IGenerationModifier
 {
-    GenerationData Modify(GenerationData generationData);
+    T Modify<T>(T generationData) where T : struct, IGenerationData;
 }

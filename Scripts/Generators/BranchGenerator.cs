@@ -7,15 +7,17 @@ public class BranchGenerator : MonoBehaviour, IProceduralGenerator
     [SerializeField] private Object[] _nextGeneratorObjects;
     private IEnumerable<IProceduralGenerator> NextGenerators => _nextGeneratorObjects.Cast<IProceduralGenerator>();
 
-    public GenerationData Generate(int depth)
+    public IGenerationData Generate(int depth)
     {
-        var data = new GenerationData(this);
+        if (depth < 1) return new BranchingGenerationData(new GenerationData(this, GenerationStatus.Failed));
+        BranchingGenerationData data = new BranchingGenerationData(new GenerationData(this, GenerationStatus.Success));
 
         foreach (var nextGenerator in NextGenerators)
         {
             if (nextGenerator != null)
-                data.childrenData.Add(nextGenerator.Generate(depth - 1));
+                data.ChildrenData.Add(nextGenerator.Generate(depth - 1));
         }
+
         return data;
     }
 }

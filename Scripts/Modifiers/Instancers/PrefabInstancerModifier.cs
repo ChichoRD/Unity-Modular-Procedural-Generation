@@ -1,38 +1,54 @@
 ﻿using System.Linq;
 using UnityEngine;
 
-public class PrefabInstancerModifier : MonoBehaviour, IGenerationModifier
+public class PrefabInstancerModifier : MonoBehaviour, IInstancerModifier
 {
-    [SerializeField] private GameObject _prefab;
+    [RequireInterface(typeof(IModuleDataProvider), typeof(GameObject))]
+    [SerializeField] private Object _prefabModuleDataProvider;
+    private IModuleDataProvider PrefabModuleDataProvider => _prefabModuleDataProvider as IModuleDataProvider;
+
     [SerializeField] private ConnectionAnchor _connectionAnchor;
     [SerializeField] private AnchorLayer _validAnchorLayers;
+    [SerializeField] private LayerMask _modulesPhysicsOverlapCheckLayers;
+    [SerializeField] private bool _destroyOnFailedToInstantiate = true;
 
-    public GameObject InstantiateAndPosition(GameObject prefab, ref GenerationData generationData)
+    public bool TryInstantiate(IModuleDataProvider moduleData, ref InstanceGenerationData generationData)
     {
-        GameObject instance = Instantiate(prefab);
-        generationData.foundGenerator = instance.GetComponentInChildren<IProceduralGenerator>();
+        GameObject instanceRoot = null;
+        generationData.InstanceRoot = instanceRoot = Instantiate(moduleData.RootTransform.gameObject);
+        moduleData = instanceRoot.GetComponentInChildren<IModuleDataProvider>();
+        generationData.InstanceGenerator = instanceRoot.GetComponentInChildren<IProceduralGenerator>();
+        //moduleData.TryGetGenerator(out generationData.foundGenerator);
 
-        var instanceAnchors = instance.GetComponentsInChildren<ConnectionAnchor>().Where(a => _validAnchorLayers.HasFlag(a.Layer));
-        ConnectionAnchor selectedInstanceAnchor = instanceAnchors.GetRandom();
+        var connectionAnchors = moduleData.ConnectionAnchors.Where(a => _validAnchorLayers.HasFlag(a.Layer)).OrderBy(_ => Random.value);
+        foreach (var connectionAnchor in connectionAnchors)
+        {
+            Vector3 anchorNormalAxis = Vector3.Cross(_connectionAnchor.Transform.forward, connectionAnchor.Transform.forward);
+            float anchorAngleDifference = Vector3.SignedAngle(_connectionAnchor.Transform.forward, connectionAnchor.Transform.forward, anchorNormalAxis);
+            instanceRoot.transform.RotateAround(connectionAnchor.Transform.position, anchorNormalAxis, -anchorAngleDifference);
 
-        Vector3 anchorNormalAxis = Vector3.Cross(_connectionAnchor.Transform.forward, selectedInstanceAnchor.Transform.forward);
-        float anchorAngleDifference = Vector3.SignedAngle(_connectionAnchor.Transform.forward, selectedInstanceAnchor.Transform.forward, anchorNormalAxis);
-        if (anchorAngleDifference > 0.01f)
-            instance.transform.RotateAround(selectedInstanceAnchor.Transform.position, anchorNormalAxis, -anchorAngleDifference);
+            Vector3 anchoredPosition = _connectionAnchor.ConnectRootWithAnchor(connectionAnchor, instanceRoot.transform.position);
+            instanceRoot.transform.position = anchoredPosition;
 
-        GameObject testA = Instantiate(prefab, instance.transform.position, instance.transform.rotation);
-        testA.name = $"testA: {instance.name}";
-        testA.SetActive(false);
+            instanceRoot.SetActive(false);
 
-        Vector3 anchoredPosition = _connectionAnchor.ConnectRootWithAnchor(selectedInstanceAnchor, instance.transform.position);
-        instance.transform.position = anchoredPosition;
+            Bounds bounds = moduleData.GetBounds();            
+            if (!Physics.CheckBox(bounds.center, bounds.extents, instanceRoot.transform.rotation, _modulesPhysicsOverlapCheckLayers))
+            {
+                instanceRoot.SetActive(true);
+                return true;
+            }
+        }
 
-        return instance;
+        generationData.InstanceGenerator = null;
+        return false;
     }
 
-    public GenerationData Modify(GenerationData generationData)
+    public T Modify<T>(T generationData) where T : struct, IGenerationData
     {
-        InstantiateAndPosition(_prefab, ref generationData);
+        if (!TryInstantiate(PrefabModuleDataProvider, ref generationData))
+            Destroy(generationData.InstanceRoot);
+
         return generationData;
     }
 }

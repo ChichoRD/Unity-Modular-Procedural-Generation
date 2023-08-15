@@ -6,9 +6,9 @@ public class FixedGenerator : MonoBehaviour, IProceduralGenerator
     [SerializeField] private Object _generationModifierObject;
     private IGenerationModifier GenerationModifier => _generationModifierObject as IGenerationModifier;
 
-    public GenerationData Generate(int depth)
+    public IGenerationData Generate(int depth)
     {
-        GenerationData data = new GenerationData(this);
+        GenerationData data = new GenerationData(this, GenerationStatus.Success);
         return GenerationModifier == null ? data : GenerationModifier.Modify(data);
     }
 }

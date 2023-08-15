@@ -1,15 +1,11 @@
-using System.Collections.Generic;
-
-public struct GenerationData
+public struct GenerationData : IGenerationData
 {
-    public GenerationData(IProceduralGenerator generator) : this()
+    public GenerationData(IProceduralGenerator generator, GenerationStatus status) : this()
     {
-        childrenData = new List<GenerationData>();
-
         Generator = generator;
+        Status = status;
     }
 
-    public List<GenerationData> childrenData;
-    public IProceduralGenerator foundGenerator;
     public readonly IProceduralGenerator Generator { get; }
+    public GenerationStatus Status { get; set; }
 }

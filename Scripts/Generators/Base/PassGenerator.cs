@@ -9,10 +9,13 @@ public class PassGenerator : MonoBehaviour, IProceduralGenerator
     [SerializeField] private Object _nextGeneratorObject;
     private IProceduralGenerator NextGenerator => _nextGeneratorObject as IProceduralGenerator;
 
-    public GenerationData Generate(int depth)
+    public IGenerationData Generate(int depth)
     {
-        var data = _generator.Generate(depth);
-        if (NextGenerator == null || depth < 1) return data;
+        IGenerationData data = _generator.Generate(depth);
+
+        if (data is not InstanceGenerationData instanceData
+            || instanceData.InstanceGenerator == null
+            || depth < 1) return data;
 
         data.childrenData.Add(NextGenerator.Generate(depth - 1));
         return data;
