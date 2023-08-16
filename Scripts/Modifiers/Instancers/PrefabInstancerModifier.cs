@@ -37,10 +37,7 @@ public class PrefabInstancerModifier : MonoBehaviour, IInstancerModifier
             {
                 instanceRoot.SetActive(true);
 
-                InstanceGenerationData outData = new InstanceGenerationData(generationData, instanceRoot, instanceGenerator);
-                instanceGenerationData = instanceGenerator == null
-                                         ? outData
-                                         : new BranchingInstanceGenerationData(outData);
+                instanceGenerationData = new BranchingInstanceGenerationData(new InstanceGenerationData(generationData, instanceRoot, instanceGenerator));
                 return true;
             }
         }

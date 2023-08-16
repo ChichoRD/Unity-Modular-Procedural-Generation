@@ -9,7 +9,7 @@ public class SearchGenerator : MonoBehaviour, IProceduralGenerator
         IGenerationData data = _generator.Generate(depth);
 
         if (depth < 1
-            || data.Status != GenerationStatus.Success
+            || data is not { Status: GenerationStatus.Success }
             || data is not IInstanceGenerationData instanceGenerationData
             || data is not IBranchingGenerationData branchingGenerationData
             || !instanceGenerationData.HasInstanceGenerator()) 

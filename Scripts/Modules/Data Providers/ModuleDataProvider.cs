@@ -9,9 +9,9 @@ public class ModuleDataProvider : MonoBehaviour, IModuleDataProvider
     [SerializeField] private ConnectionAnchor[] _connectionAnchors;
     public IEnumerable<ConnectionAnchor> ConnectionAnchors => _connectionAnchors;
 
-    [SerializeField] private float _boundsExpandBias = -0.05f;
-
-    private Bounds? _cachedDebugBounds;
+    [RequireInterface(typeof(IModuleBoundsProvider))]
+    [SerializeField] private Object _boundsProviderObject;
+    private IModuleBoundsProvider BoundsProvider => _boundsProviderObject as IModuleBoundsProvider;
 
     public bool TryGetGenerator(out IProceduralGenerator generator)
     {
@@ -19,19 +19,7 @@ public class ModuleDataProvider : MonoBehaviour, IModuleDataProvider
         return generator != null;
     }
 
-    public Bounds GetBounds()
-    {
-        var renderers = GetComponentsInChildren<Renderer>();
-        if (renderers.Length == 0)
-            return new Bounds();
-
-        var bounds = renderers[0].bounds;
-        foreach (var renderer in renderers)
-            bounds.Encapsulate(renderer.bounds);
-
-        bounds.Expand(_boundsExpandBias);
-        return bounds;
-    }
+    public Bounds GetBounds() => BoundsProvider.GetBounds();
 
     [ContextMenu(nameof(SearchConnectionAnchors))]
     private void SearchConnectionAnchors() => _connectionAnchors = GetComponentsInChildren<ConnectionAnchor>();
@@ -39,7 +27,7 @@ public class ModuleDataProvider : MonoBehaviour, IModuleDataProvider
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        _cachedDebugBounds = GetBounds();
-        Gizmos.DrawWireCube(_cachedDebugBounds.Value.center, _cachedDebugBounds.Value.size);
+        var debugBounds = GetBounds();
+        Gizmos.DrawWireCube(debugBounds.center, debugBounds.size);
     }
 }
