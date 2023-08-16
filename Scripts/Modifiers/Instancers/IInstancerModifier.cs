@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-
-public interface IInstancerModifier : IGenerationModifier
+﻿public interface IInstancerModifier : IGenerationModifier
 {
-    bool TryInstantiate(IModuleDataProvider moduleData, ref InstanceGenerationData generationData);
+    bool TryInstantiate(IModuleDataProvider moduleData, in IGenerationData generationData, out IInstanceGenerationData instanceGenerationData);
+
+    bool DestroyOnFailedToInstantiate { get; }
 }

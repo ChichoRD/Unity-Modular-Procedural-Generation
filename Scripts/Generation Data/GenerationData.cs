@@ -1,4 +1,4 @@
-public struct GenerationData : IGenerationData
+public readonly struct GenerationData : IGenerationData
 {
     public GenerationData(IProceduralGenerator generator, GenerationStatus status) : this()
     {
@@ -7,5 +7,5 @@ public struct GenerationData : IGenerationData
     }
 
     public readonly IProceduralGenerator Generator { get; }
-    public GenerationStatus Status { get; set; }
+    public GenerationStatus Status { get; }
 }

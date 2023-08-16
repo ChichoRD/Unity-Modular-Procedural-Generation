@@ -8,12 +8,15 @@ public class SearchGenerator : MonoBehaviour, IProceduralGenerator
     {
         IGenerationData data = _generator.Generate(depth);
 
-        if (data is not InstanceGenerationData instanceData
-            || !instanceData.HasInstanceGenerator()
-            || depth < 1) return data;
+        if (depth < 1
+            || data.Status != GenerationStatus.Success
+            || data is not IInstanceGenerationData instanceGenerationData
+            || data is not IBranchingGenerationData branchingGenerationData
+            || !instanceGenerationData.HasInstanceGenerator()) 
+            return data;
 
-        instanceData.ChildrenData.Add(instanceData.InstanceGenerator.Generate(depth - 1));
-        return data;
+        branchingGenerationData.ChildrenData.Add(instanceGenerationData.InstanceGenerator.Generate(depth - 1));
+        return branchingGenerationData;
     }
 
     [ContextMenu(nameof(TestGenerate))]

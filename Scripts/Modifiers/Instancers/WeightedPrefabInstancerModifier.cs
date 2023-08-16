@@ -8,32 +8,32 @@ public class WeightedPrefabInstancerModifier : MonoBehaviour, IInstancerModifier
     private struct WeightedPrefab : IRandomWeightable
     {
         [RequireInterface(typeof(IModuleDataProvider), typeof(GameObject))]
-        [SerializeField] public Object _prefabModuleDataProvider;
+        [SerializeField] private Object _prefabModuleDataProvider;
         public readonly IModuleDataProvider PrefabModuleDataProvider => _prefabModuleDataProvider as IModuleDataProvider;
 
-        [Min(0.0f)] public float weight;
+        [SerializeField] [Min(0.0f)] private float weight;
         public readonly float Weight => weight;
     }
 
     [RequireInterface(typeof(IInstancerModifier))]
     [SerializeField] private Object _prefabInstancerModifierObject;
     private IInstancerModifier PrefabInstancerModifier => _prefabInstancerModifierObject as IInstancerModifier;
+    public bool DestroyOnFailedToInstantiate => PrefabInstancerModifier.DestroyOnFailedToInstantiate;
 
     [SerializeField] private WeightedPrefab[] _weightedPrefabs;
 
-    public T Modify<T>(T generationData) where T : struct, IGenerationData
+    public bool TryInstantiate(IModuleDataProvider moduleData, in IGenerationData generationData, out IInstanceGenerationData instanceGenerationData)
     {
-        WeightedPrefab selected = _weightedPrefabs.GetWeightedRandom();
-        if (!TryInstantiate(selected.PrefabModuleDataProvider, ref generationData))
-        {
-            Destroy(instance);
-        }
-
-        return generationData;
+        return PrefabInstancerModifier.TryInstantiate(moduleData, generationData, out instanceGenerationData);
     }
 
-    public bool TryInstantiate(IModuleDataProvider moduleData, ref InstanceGenerationData generationData)
+    public IGenerationData Modify(IGenerationData generationData)
     {
-        return PrefabInstancerModifier.TryInstantiate(moduleData, ref generationData);
+        WeightedPrefab selected = _weightedPrefabs.GetWeightedRandom();
+        if (!TryInstantiate(selected.PrefabModuleDataProvider, generationData, out var instanceGenerationData)
+            && DestroyOnFailedToInstantiate)
+            Destroy(instanceGenerationData.InstanceRoot);
+
+        return instanceGenerationData;
     }
 }

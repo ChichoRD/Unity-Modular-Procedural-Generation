@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PassGenerator : MonoBehaviour, IProceduralGenerator
 {
@@ -13,12 +12,13 @@ public class PassGenerator : MonoBehaviour, IProceduralGenerator
     {
         IGenerationData data = _generator.Generate(depth);
 
-        if (data is not InstanceGenerationData instanceData
-            || instanceData.InstanceGenerator == null
-            || depth < 1) return data;
+        if (depth < 1
+            || data.Status != GenerationStatus.Success
+            || data is not IBranchingGenerationData branchingGenerationData)
+            return data;
 
-        data.childrenData.Add(NextGenerator.Generate(depth - 1));
-        return data;
+        branchingGenerationData.ChildrenData.Add(NextGenerator.Generate(depth - 1));
+        return branchingGenerationData;
     }
 
     [ContextMenu(nameof(TestGenerate))]

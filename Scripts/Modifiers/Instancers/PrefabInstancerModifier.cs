@@ -11,14 +11,15 @@ public class PrefabInstancerModifier : MonoBehaviour, IInstancerModifier
     [SerializeField] private AnchorLayer _validAnchorLayers;
     [SerializeField] private LayerMask _modulesPhysicsOverlapCheckLayers;
     [SerializeField] private bool _destroyOnFailedToInstantiate = true;
+    public bool DestroyOnFailedToInstantiate => _destroyOnFailedToInstantiate;
 
-    public bool TryInstantiate(IModuleDataProvider moduleData, ref InstanceGenerationData generationData)
+    public bool TryInstantiate(IModuleDataProvider moduleData, in IGenerationData generationData, out IInstanceGenerationData instanceGenerationData)
     {
-        GameObject instanceRoot = null;
-        generationData.InstanceRoot = instanceRoot = Instantiate(moduleData.RootTransform.gameObject);
+        GameObject instanceRoot = Instantiate(moduleData.RootTransform.gameObject);
+        instanceRoot.SetActive(false);
+
         moduleData = instanceRoot.GetComponentInChildren<IModuleDataProvider>();
-        generationData.InstanceGenerator = instanceRoot.GetComponentInChildren<IProceduralGenerator>();
-        //moduleData.TryGetGenerator(out generationData.foundGenerator);
+        IProceduralGenerator instanceGenerator = instanceRoot.GetComponentInChildren<IProceduralGenerator>();
 
         var connectionAnchors = moduleData.ConnectionAnchors.Where(a => _validAnchorLayers.HasFlag(a.Layer)).OrderBy(_ => Random.value);
         foreach (var connectionAnchor in connectionAnchors)
@@ -30,25 +31,30 @@ public class PrefabInstancerModifier : MonoBehaviour, IInstancerModifier
             Vector3 anchoredPosition = _connectionAnchor.ConnectRootWithAnchor(connectionAnchor, instanceRoot.transform.position);
             instanceRoot.transform.position = anchoredPosition;
 
-            instanceRoot.SetActive(false);
 
             Bounds bounds = moduleData.GetBounds();            
             if (!Physics.CheckBox(bounds.center, bounds.extents, instanceRoot.transform.rotation, _modulesPhysicsOverlapCheckLayers))
             {
                 instanceRoot.SetActive(true);
+
+                InstanceGenerationData outData = new InstanceGenerationData(generationData, instanceRoot, instanceGenerator);
+                instanceGenerationData = instanceGenerator == null
+                                         ? outData
+                                         : new BranchingInstanceGenerationData(outData);
                 return true;
             }
         }
 
-        generationData.InstanceGenerator = null;
+        instanceGenerationData = new InstanceGenerationData(new GenerationData(generationData.Generator, GenerationStatus.Failed), instanceRoot, instanceGenerator);
         return false;
     }
 
-    public T Modify<T>(T generationData) where T : struct, IGenerationData
+    public IGenerationData Modify(IGenerationData generationData)
     {
-        if (!TryInstantiate(PrefabModuleDataProvider, ref generationData))
-            Destroy(generationData.InstanceRoot);
+        if (!TryInstantiate(PrefabModuleDataProvider, in generationData, out IInstanceGenerationData instanceGenerationData)
+            && DestroyOnFailedToInstantiate)
+            Destroy(instanceGenerationData.InstanceRoot);
 
-        return generationData;
+        return instanceGenerationData;
     }
 }
