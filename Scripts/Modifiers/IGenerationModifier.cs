@@ -1,4 +1,6 @@
-public interface IGenerationModifier
+public interface IGenerationModifier<in TDataIn, out  TDataOut>
+    where TDataIn : IGenerationData
+    where TDataOut : IGenerationData
 {
-    IGenerationData Modify(IGenerationData generationData);
+    TDataOut Modify(TDataIn generationData);
 }

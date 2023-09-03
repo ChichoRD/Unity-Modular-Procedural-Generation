@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using UnityEngine;
 
-public class PrefabInstancerModifier : MonoBehaviour, IInstancerModifier
+public class PrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGenerationData, IInstanceGenerationData>, IInstancerModifier
 {
     [RequireInterface(typeof(IModuleDataProvider), typeof(GameObject))]
     [SerializeField] private Object _prefabModuleDataProvider;
@@ -37,7 +37,7 @@ public class PrefabInstancerModifier : MonoBehaviour, IInstancerModifier
             {
                 instanceRoot.SetActive(true);
 
-                instanceGenerationData = new BranchingInstanceGenerationData(new InstanceGenerationData(generationData, instanceRoot, instanceGenerator));
+                instanceGenerationData = new InstanceGenerationData(generationData, instanceRoot, instanceGenerator);
                 return true;
             }
         }
@@ -46,12 +46,9 @@ public class PrefabInstancerModifier : MonoBehaviour, IInstancerModifier
         return false;
     }
 
-    public IGenerationData Modify(IGenerationData generationData)
+    public IInstanceGenerationData Modify(IGenerationData generationData)
     {
-        if (!TryInstantiate(PrefabModuleDataProvider, in generationData, out IInstanceGenerationData instanceGenerationData)
-            && DestroyOnFailedToInstantiate)
-            Destroy(instanceGenerationData.InstanceRoot);
-
+        TryInstantiate(PrefabModuleDataProvider, in generationData, out IInstanceGenerationData instanceGenerationData);
         return instanceGenerationData;
     }
 }

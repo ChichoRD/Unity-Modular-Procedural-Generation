@@ -2,29 +2,22 @@
 
 public class SearchGenerator : MonoBehaviour, IProceduralGenerator
 {
-    [SerializeField] private FixedGenerator _generator;
+    [RequireInterface(typeof(IGenerationModifier<IGenerationData, IInstanceGenerationData>))]
+    [SerializeField] private Object _generatorModifierObject;
+    private IGenerationModifier<IGenerationData, IInstanceGenerationData> GeneratorModifier => _generatorModifierObject as IGenerationModifier<IGenerationData, IInstanceGenerationData>;
 
     public IGenerationData Generate(int depth)
     {
-        IGenerationData data = _generator.Generate(depth);
+        IInstanceGenerationData data = new InstanceGenerationData(new GenerationData(this), null, this);
+        data = GeneratorModifier?.Modify(data) ?? data;
 
         if (depth < 1
             || data is not { Status: GenerationStatus.Success }
-            || data is not IInstanceGenerationData instanceGenerationData
-            || data is not IBranchingGenerationData branchingGenerationData
-            || !instanceGenerationData.HasInstanceGenerator()) 
+            || !data.HasInstanceGenerator()) 
             return data;
 
-        branchingGenerationData.ChildrenData.Add(instanceGenerationData.InstanceGenerator.Generate(depth - 1));
-        return branchingGenerationData;
+        IBranchingGenerationData branchingData = new BranchingGenerationData(data);
+        branchingData.ChildrenData.Add(data.InstanceGenerator.Generate(depth - 1));
+        return branchingData;
     }
-
-    [ContextMenu(nameof(TestGenerate))]
-    private void TestGenerate()
-    {
-        const int DEPTH = 8;
-        var data = Generate(DEPTH - 1);
-        Debug.Log(data);
-    }
-
 }

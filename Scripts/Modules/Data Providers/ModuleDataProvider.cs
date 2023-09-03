@@ -26,6 +26,8 @@ public class ModuleDataProvider : MonoBehaviour, IModuleDataProvider
 
     private void OnDrawGizmosSelected()
     {
+        if (BoundsProvider == null) return;
+
         Gizmos.color = Color.green;
         var debugBounds = GetBounds();
         Gizmos.DrawWireCube(debugBounds.center, debugBounds.size);

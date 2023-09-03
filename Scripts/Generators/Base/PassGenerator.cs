@@ -2,7 +2,9 @@
 
 public class PassGenerator : MonoBehaviour, IProceduralGenerator
 {
-    [SerializeField] private FixedGenerator _generator;
+    [RequireInterface(typeof(IGenerationModifier<IGenerationData, IGenerationData>))]
+    [SerializeField] private Object _generatorModifierObject;
+    private IGenerationModifier<IGenerationData, IGenerationData> GeneratorModifier => _generatorModifierObject as IGenerationModifier<IGenerationData, IGenerationData>;
 
     [RequireInterface(typeof(IProceduralGenerator))]
     [SerializeField] private Object _nextGeneratorObject;
@@ -10,22 +12,15 @@ public class PassGenerator : MonoBehaviour, IProceduralGenerator
 
     public IGenerationData Generate(int depth)
     {
-        IGenerationData data = _generator.Generate(depth);
+        IGenerationData data = new GenerationData(this);
+        data = GeneratorModifier?.Modify(data) ?? data;
 
         if (depth < 1
-            || data.Status != GenerationStatus.Success
-            || data is not IBranchingGenerationData branchingGenerationData)
+            || data.Status != GenerationStatus.Success)
             return data;
 
-        branchingGenerationData.ChildrenData.Add(NextGenerator.Generate(depth - 1));
-        return branchingGenerationData;
-    }
-
-    [ContextMenu(nameof(TestGenerate))]
-    private void TestGenerate()
-    {
-        const int DEPTH = 4;
-        var data = Generate(DEPTH - 1);
-        Debug.Log(data);
+        IBranchingGenerationData branchingData = new BranchingGenerationData(data);
+        branchingData.ChildrenData.Add(NextGenerator.Generate(depth - 1));
+        return data;
     }
 }

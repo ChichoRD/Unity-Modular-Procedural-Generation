@@ -1,6 +1,6 @@
 public readonly struct GenerationData : IGenerationData
 {
-    public GenerationData(IProceduralGenerator generator, GenerationStatus status) : this()
+    public GenerationData(IProceduralGenerator generator, GenerationStatus status = GenerationStatus.Success) : this()
     {
         Generator = generator;
         Status = status;
