@@ -15,7 +15,7 @@ public class ModuleDataProvider : MonoBehaviour, IModuleDataProvider
 
     public bool TryGetGenerator(out IProceduralGenerator generator)
     {
-        generator = GetComponent<IProceduralGenerator>();
+        generator = GetComponentInChildren<IProceduralGenerator>();
         return generator != null;
     }
 

@@ -19,18 +19,17 @@ public class PrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGener
         instanceRoot.SetActive(false);
 
         moduleData = instanceRoot.GetComponentInChildren<IModuleDataProvider>();
-        IProceduralGenerator instanceGenerator = instanceRoot.GetComponentInChildren<IProceduralGenerator>();
+        moduleData.TryGetGenerator(out IProceduralGenerator instanceGenerator);
 
         var connectionAnchors = moduleData.ConnectionAnchors.Where(a => _validAnchorLayers.HasFlag(a.Layer)).OrderBy(_ => Random.value);
         foreach (var connectionAnchor in connectionAnchors)
         {
-            Vector3 anchorNormalAxis = Vector3.Cross(_connectionAnchor.Transform.forward, connectionAnchor.Transform.forward);
-            float anchorAngleDifference = Vector3.SignedAngle(_connectionAnchor.Transform.forward, connectionAnchor.Transform.forward, anchorNormalAxis);
-            instanceRoot.transform.RotateAround(connectionAnchor.Transform.position, anchorNormalAxis, -anchorAngleDifference);
+            Quaternion anchorTargetRotation = _connectionAnchor.Transform.rotation;
+            Quaternion rotationCorrection = anchorTargetRotation * Quaternion.Inverse(connectionAnchor.Transform.localRotation);
+            instanceRoot.transform.rotation = rotationCorrection;
 
             Vector3 anchoredPosition = _connectionAnchor.ConnectRootWithAnchor(connectionAnchor, instanceRoot.transform.position);
             instanceRoot.transform.position = anchoredPosition;
-
 
             Bounds bounds = moduleData.GetBounds();            
             if (!Physics.CheckBox(bounds.center, bounds.extents, instanceRoot.transform.rotation, _modulesPhysicsOverlapCheckLayers))
