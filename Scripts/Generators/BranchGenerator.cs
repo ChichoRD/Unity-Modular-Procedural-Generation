@@ -9,13 +9,19 @@ public class BranchGenerator : MonoBehaviour, IProceduralGenerator
 
     public IGenerationData Generate(int depth)
     {
-        if (depth < 1) return new BranchingGenerationData(new GenerationData(this, GenerationStatus.Failed));
-        BranchingGenerationData data = new BranchingGenerationData(new GenerationData(this, GenerationStatus.Success));
+        IGenerationData data = new GenerationData(this, GenerationStatus.Failed);
+
+        if (depth < 1)
+            return new BranchingGenerationData(data, default);
+
+        IGenerationData<GeneratedBranchData> branchData = new BranchingGenerationData(
+            new GenerationData(this, GenerationStatus.Success),
+            new GeneratedBranchData(new List<IGenerationData>()));
 
         foreach (var nextGenerator in NextGenerators)
         {
             if (nextGenerator != null)
-                data.ChildrenData.Add(nextGenerator.Generate(depth - 1));
+                branchData.Data.ChildrenData.Add(nextGenerator.Generate(depth - 1));
         }
 
         return data;

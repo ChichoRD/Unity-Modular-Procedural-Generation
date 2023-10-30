@@ -8,7 +8,7 @@ public class FixedGenerator : MonoBehaviour, IProceduralGenerator
 
     public IGenerationData Generate(int depth)
     {
-        GenerationData data = new GenerationData(this, GenerationStatus.Success);
+        GenerationData data = new GenerationData(this, GenerationStatus.Failed);
         return GenerationModifier == null ? data : GenerationModifier.Modify(data);
     }
 }

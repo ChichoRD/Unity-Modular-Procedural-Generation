@@ -2,9 +2,9 @@
 
 public class PassGenerator : MonoBehaviour, IProceduralGenerator
 {
-    [RequireInterface(typeof(IGenerationModifier<IGenerationData, IGenerationData>))]
+    [RequireInterface(typeof(IGenerationModifier<IGenerationData, IGenerationData<GeneratedBranchData>>))]
     [SerializeField] private Object _generatorModifierObject;
-    private IGenerationModifier<IGenerationData, IGenerationData> GeneratorModifier => _generatorModifierObject as IGenerationModifier<IGenerationData, IGenerationData>;
+    private IGenerationModifier<IGenerationData, IGenerationData<GeneratedBranchData>> GeneratorModifier => _generatorModifierObject as IGenerationModifier<IGenerationData, IGenerationData<GeneratedBranchData>>;
 
     [RequireInterface(typeof(IProceduralGenerator))]
     [SerializeField] private Object _nextGeneratorObject;
@@ -12,15 +12,15 @@ public class PassGenerator : MonoBehaviour, IProceduralGenerator
 
     public IGenerationData Generate(int depth)
     {
-        IGenerationData data = new GenerationData(this);
-        data = GeneratorModifier?.Modify(data) ?? data;
+        IGenerationData data = new GenerationData(this, GenerationStatus.Failed);
+        IGenerationData<GeneratedBranchData> branchData = GeneratorModifier?.Modify(data)
+                                                          ?? new BranchingGenerationData(data, default);
 
         if (depth < 1
-            || data.Status != GenerationStatus.Success)
-            return data;
+            || branchData is not { Status: GenerationStatus.Success })
+            return branchData;
 
-        IBranchingGenerationData branchingData = new BranchingGenerationData(data);
-        branchingData.ChildrenData.Add(NextGenerator.Generate(depth - 1));
+        branchData.Data.ChildrenData.Add(NextGenerator.Generate(depth - 1));
         return data;
     }
 }

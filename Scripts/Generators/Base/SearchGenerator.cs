@@ -1,23 +1,28 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class SearchGenerator : MonoBehaviour, IProceduralGenerator
 {
-    [RequireInterface(typeof(IGenerationModifier<IGenerationData, IInstanceGenerationData>))]
+    [RequireInterface(typeof(IGenerationModifier<IGenerationData, IGenerationData<GeneratedInstanceData>>))]
     [SerializeField] private Object _generatorModifierObject;
-    private IGenerationModifier<IGenerationData, IInstanceGenerationData> GeneratorModifier => _generatorModifierObject as IGenerationModifier<IGenerationData, IInstanceGenerationData>;
+    private IGenerationModifier<IGenerationData, IGenerationData<GeneratedInstanceData>> GeneratorModifier => _generatorModifierObject as IGenerationModifier<IGenerationData, IGenerationData<GeneratedInstanceData>>;
 
     public IGenerationData Generate(int depth)
     {
-        IInstanceGenerationData data = new InstanceGenerationData(new GenerationData(this), null, this);
-        data = GeneratorModifier?.Modify(data) ?? data;
+        IGenerationData data = new GenerationData(this, GenerationStatus.Failed);
+        IGenerationData<GeneratedInstanceData>  instanceData = GeneratorModifier?.Modify(data)
+                                                               ?? new InstanceGenerationData(data, default);
 
         if (depth < 1
-            || data is not { Status: GenerationStatus.Success }
-            || !data.HasInstanceGenerator()) 
-            return data;
+            || instanceData is not { Status: GenerationStatus.Success }
+            || !instanceData.HasInstanceGenerator()) 
+            return instanceData;
 
-        IBranchingGenerationData branchingData = new BranchingGenerationData(data);
-        branchingData.ChildrenData.Add(data.InstanceGenerator.Generate(depth - 1));
+        IGenerationData<GeneratedBranchData> branchingData = new BranchingGenerationData(
+            instanceData,
+            new GeneratedBranchData(new List<IGenerationData>()));
+
+        branchingData.Data.ChildrenData.Add(instanceData.Data.InstanceGenerator.Generate(depth - 1));
         return branchingData;
     }
 }

@@ -2,7 +2,7 @@
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-public class WeightedPrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGenerationData, IInstanceGenerationData>
+public class WeightedPrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGenerationData, IGenerationData<GeneratedInstanceData>>
 {
     [Serializable]
     private struct WeightedPrefab : IRandomWeightable
@@ -22,11 +22,11 @@ public class WeightedPrefabInstancerModifier : MonoBehaviour, IGenerationModifie
 
     [SerializeField] private WeightedPrefab[] _weightedPrefabs;
 
-    public IInstanceGenerationData Modify(IGenerationData generationData)
+    public IGenerationData<GeneratedInstanceData> Modify(IGenerationData generationData)
     {
         WeightedPrefab selected = _weightedPrefabs.GetWeightedRandom();
         if (selected.PrefabModuleDataProvider == null)
-            return new InstanceGenerationData(new GenerationData(generationData.Generator, GenerationStatus.Failed), null, null);
+            return new InstanceGenerationData(new GenerationData(generationData.Generator, GenerationStatus.Failed), default);
 
         PrefabInstancerModifier.TryInstantiate(selected.PrefabModuleDataProvider, generationData, out var instanceGenerationData);
         return instanceGenerationData;

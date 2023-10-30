@@ -1,11 +1,12 @@
+﻿
 public readonly struct GenerationData : IGenerationData
 {
-    public GenerationData(IProceduralGenerator generator, GenerationStatus status = GenerationStatus.Success) : this()
+    public IProceduralGenerator Generator { get; }
+    public GenerationStatus Status { get; }
+
+    public GenerationData(IProceduralGenerator generator, GenerationStatus status)
     {
         Generator = generator;
         Status = status;
     }
-
-    public readonly IProceduralGenerator Generator { get; }
-    public GenerationStatus Status { get; }
 }

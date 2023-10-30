@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using UnityEngine;
 
-public class PrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGenerationData, IInstanceGenerationData>, IInstancerModifier
+public class PrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGenerationData, IGenerationData<GeneratedInstanceData>>, IInstancerModifier
 {
     [RequireInterface(typeof(IModuleDataProvider), typeof(GameObject))]
     [SerializeField] private Object _prefabModuleDataProvider;
@@ -13,7 +13,7 @@ public class PrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGener
     [SerializeField] private bool _destroyOnFailedToInstantiate = true;
     public bool DestroyOnFailedToInstantiate => _destroyOnFailedToInstantiate;
 
-    public bool TryInstantiate(IModuleDataProvider moduleData, in IGenerationData generationData, out IInstanceGenerationData instanceGenerationData)
+    public bool TryInstantiate(IModuleDataProvider moduleData, in IGenerationData generationData, out IGenerationData<GeneratedInstanceData> instanceGenerationData)
     {
         GameObject instanceRoot = Instantiate(moduleData.RootTransform.gameObject);
         instanceRoot.SetActive(false);
@@ -36,18 +36,22 @@ public class PrefabInstancerModifier : MonoBehaviour, IGenerationModifier<IGener
             {
                 instanceRoot.SetActive(true);
 
-                instanceGenerationData = new InstanceGenerationData(generationData, instanceRoot, instanceGenerator);
+                instanceGenerationData = new InstanceGenerationData(
+                    new GenerationData(generationData.Generator, GenerationStatus.Success),
+                    new GeneratedInstanceData(instanceRoot, instanceGenerator));
                 return true;
             }
         }
 
-        instanceGenerationData = new InstanceGenerationData(new GenerationData(generationData.Generator, GenerationStatus.Failed), instanceRoot, instanceGenerator);
+        instanceGenerationData = new InstanceGenerationData(
+            new GenerationData(generationData.Generator, GenerationStatus.Failed),
+            new GeneratedInstanceData(instanceRoot, instanceGenerator));
         return false;
     }
 
-    public IInstanceGenerationData Modify(IGenerationData generationData)
+    public IGenerationData<GeneratedInstanceData> Modify(IGenerationData generationData)
     {
-        TryInstantiate(PrefabModuleDataProvider, in generationData, out IInstanceGenerationData instanceGenerationData);
+        TryInstantiate(PrefabModuleDataProvider, in generationData, out IGenerationData<GeneratedInstanceData> instanceGenerationData);
         return instanceGenerationData;
     }
 }
